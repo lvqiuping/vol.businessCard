@@ -1,0 +1,20 @@
+{
+    "id": "vite-plugin-uni-twucss",
+    "displayName": "vite-plugin-uni-twucss",
+    "version": "1.0.7",
+    "description": "将tailwindcss、windicss、unocss编译后的css再次编译成支持uniapp中的小程序端和app-nvue",
+    "keywords": [
+        "tailwindcss",
+        "windicss",
+        "unocss"
+    ],
+    "dcloudext": {
+        "category": [
+            "前端组件",
+            "通用组件"
+        ]
+    },
+    "dependencies": {
+        "wxml-to-canvas": "^1.1.1"
+    }
+}

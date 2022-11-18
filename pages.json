@@ -1,0 +1,47 @@
+{
+	"pages": [ //pages数组中第一项表示应用启动页，参考：https://uniapp.dcloud.io/collocation/pages{
+		{
+			"path": "pages/home/home",
+			"style": {
+				"navigationBarTitleText": "名片",
+				"enablePullDownRefresh": true,
+				"navigationBarTextStyle": "white",
+				"navigationBarBackgroundColor": "#00aaff",
+				"app-plus": { // 隐藏系统导航栏
+					"titleNView": false
+				},
+				"navigationStyle": "custom" //添加自定义配置
+
+			}
+		}
+	],
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationBarTitleText": "通讯录",
+		"navigationBarBackgroundColor": "#00aaff",
+		"navigationBarTextStyle": "white",
+		"backgroundColor": "#FFFFFF",
+		"onReachBottomDistance": 50,
+		"usingComponenets": {
+			"wxml-to-canvas": "/wxcomponents/wxml-to-canvas/index"
+		}
+	},
+	"easycom": {
+		"autoscan": true,
+		"custom": {
+			"^vol-(.*)": "@/components/vol-$1/vol-$1.vue",
+			"^view-(.*)": "@/components/view-$1/view-$1.vue"
+			// ,
+			// "^grid-(.*)": "@/pages/menu/grid-$1.vue"
+
+		}
+	},
+	"condition": { //模式配置，仅开发期间生效
+		"current": 0, //当前激活的模式(list 的索引项)
+		"list": [{
+			"name": "", //模式名称
+			"path": "", //启动页面，必选
+			"query": "" //启动参数，在页面的onLoad函数里面得到
+		}]
+	}
+}
