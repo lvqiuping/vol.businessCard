@@ -13,6 +13,13 @@
 				"navigationStyle": "custom" //添加自定义配置
 
 			}
+		}, {
+			"path": "components/vol-webview/vol-webview",
+			"style": {
+				"navigationBarTitleText": "",
+				"enablePullDownRefresh": false
+			}
+
 		}
 	],
 	"globalStyle": {
@@ -22,7 +29,7 @@
 		"navigationBarTextStyle": "white",
 		"backgroundColor": "#FFFFFF",
 		"onReachBottomDistance": 50,
-		"usingComponenets": {
+		"usingComponents": {
 			"wxml-to-canvas": "/wxcomponents/wxml-to-canvas/index"
 		}
 	},
