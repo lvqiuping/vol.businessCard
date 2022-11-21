@@ -2,7 +2,7 @@
 	<view>
 		<!-- 弹框询问微信昵称, 头像授权 -->
 		<u-popup :show="showAsk" mode="center">
-			<view style="width: 500rpx; height: 500rpx; text-align: center;">
+			<view style="width: 500rpx; height: 500rpx; text-align: center;border-radius: 20px;">
 				<image src="@/static/imgs/popup.png" mode="aspectFill" style="width: 100%;height: 110px;"></image>
 
 				<view style="margin: 0 60rpx;">

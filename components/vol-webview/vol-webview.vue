@@ -15,7 +15,8 @@
 			}
 		},
 		onLoad(val) {
-			this.url = 'https://www.deman1998.com/'
+			// 传过来的地址一定要补全 https://， 网页会自动补全，但是小程序不会
+			this.url = 'https://' + val.url
 			// 设置当前的title 如果外链中有的话将被覆盖
 			if (this.isNotEmpty(val.title)) {
 				this.setTitle(val.title);

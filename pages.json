@@ -28,10 +28,10 @@
 		"navigationBarBackgroundColor": "#00aaff",
 		"navigationBarTextStyle": "white",
 		"backgroundColor": "#FFFFFF",
-		"onReachBottomDistance": 50,
-		"usingComponents": {
-			"wxml-to-canvas": "/wxcomponents/wxml-to-canvas/index"
-		}
+		"onReachBottomDistance": 50
+		// "usingComponents": {
+		// 	"wxml-to-canvas": "/wxcomponents/wxml-to-canvas/index"
+		// }
 	},
 	"easycom": {
 		"autoscan": true,

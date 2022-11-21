@@ -1,10 +1,11 @@
 <template>
 	<view>
 		<view style="position: relative;" class="bg-box">
-			<image :src="imgBg" style="width: 100%;" mode="widthFix"></image>
+			<image :src="imgBg" style="width: 100%;" mode="widthFix" :show-menu-by-longpress="true"
+				@click="getPreviewImage(imgBg)"></image>
 			<view style="position: absolute;bottom: -8px; background-color: #fff; width: 210px; border-radius: 50px;
 				margin-left: 15px;padding: 4px 0 4px 10px;">
-				<u--text :text="resume.organization" size="18"></u--text>
+				{{ resume.organization }}
 			</view>
 		</view>
 		<view class="content">
@@ -13,15 +14,13 @@
 					<view v-for="(item, index) in resumeList" :key="index">
 						<view class="t-text"> {{ item }}{{ resume[index] }}</view>
 					</view>
-					<view class="t-text" @click="getInfos(resume.url)">官网：{{ resume.url }}</view>
-					<!-- <web-view :src="resume.url">{{resume.url}}</web-view> -->
+					<view class="t-text" @click="getWebview(resume.url)">官网：{{ resume.url }}</view>
 				</view>
 
 				<view>
-					<button class="custom-style" v-if="isLogin" open-type="share">
-					</button>
-					<button class="custom-style" v-else @click="showAsk = true">
-					</button>
+					<button class="custom-style" open-type="share"></button>
+					<!-- <button class="custom-style" v-else @click="showAsk = true">
+					</button> -->
 				</view>
 
 
@@ -29,14 +28,27 @@
 			</view>
 			<view class="t-button">
 				<view v-for="(item, index) in btnList" :key="index">
-					<view style="display: flex; align-items: center; justify-content: space-around; 
+					<view style="display: flex; align-items: center; justify-content: space-between; 
 						border: 2px solid #0089cd;border-radius: 50px; padding: 6px;" @click="getBtn(item)">
 						<image :src="item.url" style="width: 12px;height: 12px;"></image>
 						<view style="font-size: 14px; padding-left: 4px;">{{ item.text }}</view>
 					</view>
 				</view>
 			</view>
-			<!-- <view style="width: 100%; height: 32px;margin-top: 10px;" class="bg-look"></view> -->
+			<view style="margin-top: 10px;display: flex;justify-content: space-between;font-size: 12px; color: #bbb;">
+				<view style="display: flex;align-items: center;">
+					<view v-for="(item, index) in supportList" :key="index" style="display: flex; align-items: center;">
+						<image :src="item.avatarUrl" style="width: 12px;height: 12px;margin-right: 4px;"></image>
+					</view>
+					<view>最近{{ look }}人浏览</view>
+				</view>
+				<view style="display: flex;" @click="getSupport">
+					点赞 {{ zan }}
+					<u-icon :name="isSupport?'thumb-up-fill':'thumb-up'" :color="isSupport?'#0089cd':'#bbb'"></u-icon>
+				</view>
+			</view>
+
+
 		</view>
 		<vol-popup :showAsk="showAsk" :popupContent="popupContent" @cancel="cancelShowAsk" @confirm="wechatLogin">
 		</vol-popup>
@@ -52,8 +64,13 @@
 		name: 'Home',
 		data() {
 			return {
+				userInfo: {},
+				isLogin: false,
+				shareOpenType: '',
+				zan: 0,
+				look: 0,
+				isSupport: false,
 				isWeb: false,
-				isLogin: true,
 				showAsk: false,
 				popupContent: {
 					title: '您还未登录',
@@ -61,6 +78,7 @@
 					cancel: '稍后登录',
 					confirm: '登录'
 				},
+				code: require('@/static/imgs/code.png'),
 				imgBg: require('@/static/imgs/bg.png'),
 				share: require('@/static/imgs/bb2.png'),
 				btnList: [{
@@ -93,7 +111,9 @@
 					email: '邮箱：',
 					workAddressStreet: '地址：'
 					// url: '官网：'
-				}
+				},
+				supportList: [],
+				supportFlag: false
 
 			}
 		},
@@ -133,6 +153,200 @@
 		},
 
 		methods: {
+			// 授权登录
+			wechatLogin() {
+				var that = this
+				that.showAsk = false
+				uni.getUserProfile({ // 调起微信询问是否登录，拿到用户信息
+					desc: '用于完善会员信息',
+					lang: 'zh_CN',
+					success: res => {
+						if (res) {
+							console.log('成功', res)
+							that.userInfo.news_id = res.userInfo.news_id
+							that.userInfo.avatarUrl = res.userInfo.avatarUrl
+							// userInfoList.push({})
+							// console.log('that.userInfo', that.userInfo)
+							// uni.setStorageSync('userInfos', that.userInfo)
+							// console.log(uni.getStorageInfoSync('userInfos'))
+							that.supportList.push(that.userInfo)
+							wx.login({ // 拿到code
+								success(res2) {
+									console.log('code', res2)
+									if (res2) {
+										that.isLogin = true
+										that.look = that.look + 1
+										uni.showToast({
+											text: '登录成功！'
+										})
+									}
+
+								}
+							})
+
+						}
+					},
+					fail: err => {
+						console.log('err', err)
+					}
+				})
+			},
+			// 取消登录
+			cancelShowAsk(v) {
+				var that = this
+				that.showAsk = v
+			},
+			// 分享
+			getShare() {
+				if (this.isLogin) {
+					this.shareOpenType = 'share'
+				} else {
+					this.showAsk = true
+				}
+			},
+			// 拨号+通讯录+跳转
+			getBtn(v) {
+				var that = this
+				if (v.type === 'call') {
+					that.makeCall(that.resume.mobilePhoneNumber)
+				} else if (v.type === 'add') {
+					that.getAdd()
+				} else if (v.type === 'adress') {
+					that.getMap()
+				}
+			},
+			//拨号
+			makeCall: function(mobile) {
+				//安卓端：询问电话权限
+				switch (uni.getSystemInfoSync().platform) {
+					case 'android':
+						permision.requestAndroidPermission("android.permission.CALL_PHONE")
+						break;
+					case 'ios':
+						permision.judgeIosPermission("record")
+						permision.judgeIosPermission("camera")
+						break;
+				};
+				this.makePhoneCall(mobile)
+			},
+			makePhoneCall: function(phoneParmas) {
+				uni.makePhoneCall({
+					phoneNumber: phoneParmas,
+				});
+			},
+			// 通讯录
+			getAdd() {
+				var that = this
+				uni.addPhoneContact({
+					organization: that.resume.organization,
+					title: that.resume.title,
+					firstName: that.resume.firstName,
+					mobilePhoneNumber: that.resume.mobilePhoneNumber,
+					email: that.resume.email,
+					workAddressStreet: that.resume.workAddressStreet,
+					url: that.resume.url,
+					success(res) {
+						console.log('添加到通讯', res)
+
+					},
+					fail() {
+
+					},
+					complete() {
+
+					}
+				})
+			},
+			// 导航
+			getMap() {
+				uni.openLocation({
+					latitude: 30.163972,
+					longitude: 121.326373,
+					address: '浙江慈溪市匡堰越慈路188号',
+					success: function() {
+						console.log('success');
+					},
+					fail: function() {
+						uni.showToast({
+							title: 'error'
+						})
+					}
+				})
+				// uni.getLocation({
+				// 	type: 'gcj02', //返回可以用于uni.openLocation的经纬度
+				// 	success: function(res) {
+				// 		console.log('99999', res)
+				// 		const latitude = res.latitude;
+				// 		const longitude = res.longitude;
+				// 		uni.openLocation({
+				// 			latitude: latitude,
+				// 			longitude: longitude,
+				// 			success: function() {
+				// 				console.log('success');
+				// 			},
+				// 			fail: function() {
+				// 				uni.showToast({
+				// 					title: 'error'
+				// 				})
+				// 			}
+				// 		})
+				// 	},
+
+				// })
+			},
+			// 外部链接跳转
+			getWebview(v) {
+				uni.navigateTo({
+					url: '/components/vol-webview/vol-webview?url=' + v
+				})
+			},
+			// 点赞
+			getSupport() {
+				if (!this.isLogin) {
+					this.showAsk = true
+				} else {
+					this.supportFlag = !this.supportFlag
+					this.isSupport = !this.isSupport
+					if (this.supportFlag) {
+						this.zan = this.zan + 1
+					} else if (!this.supportFlag) {
+						this.zan = this.zan - 1
+					}
+				}
+				// let params = {
+				// 	id: id
+				// }
+				// that.http.get("/NewsComments/setInc", params).then(result => {
+				// 	// 获取点赞列表
+				// 	that.getList()
+				// })
+			},
+			// 点赞列表
+			getList() {
+				var that = this;
+				let params = {
+					news_id: that.newsInfo.id
+				}
+				that.http.get("/NewsComments/index", params).then(result => {
+					result.data.color = "#333"
+					that.commentList = result.data;
+					that.loading = false;
+				})
+			},
+			//长按识别二维码
+			getPreviewImage(e) {
+				console.log('e', e)
+				uni.previewImage({
+					urls: ['@/static/imgs/imgBg.png'], // 数组
+					current: '@/static/imgs/imgBg.png', // 数组中的第一张
+					success: res => {
+						console.log('res', res)
+					},
+					fail: err => {
+						console.log('err', err)
+					}
+				})
+			}
 			// getImage() {
 			// 	const cw = 140
 			// 	const ch = 112
@@ -171,299 +385,6 @@
 			// 	this.testImg = re.tempFilePath
 			// },
 
-			getInfos(v) {
-				console.log(v)
-				uni.navigateTo({
-					url: '/components/vol-webview/vol-webview?url=' + v
-				})
-			},
-			getBtn(v) {
-				var that = this
-				if (v.type === 'call') {
-					that.makeCall(that.resume.mobilePhoneNumber)
-				} else if (v.type === 'add') {
-					that.getAdd()
-				} else if (v.type === 'adress') {
-					that.getMap()
-				}
-			},
-			getMap() {
-				uni.openLocation({
-					latitude: 30.163972,
-					longitude: 121.326373,
-					address: '浙江慈溪市匡堰越慈路188号',
-					success: function() {
-						console.log('success');
-					},
-					fail: function() {
-						uni.showToast({
-							title: 'error'
-						})
-					}
-				})
-				// uni.getLocation({
-				// 	type: 'gcj02', //返回可以用于uni.openLocation的经纬度
-				// 	success: function(res) {
-				// 		console.log('99999', res)
-				// 		const latitude = res.latitude;
-				// 		const longitude = res.longitude;
-				// 		uni.openLocation({
-				// 			latitude: latitude,
-				// 			longitude: longitude,
-				// 			success: function() {
-				// 				console.log('success');
-				// 			},
-				// 			fail: function() {
-				// 				uni.showToast({
-				// 					title: 'error'
-				// 				})
-				// 			}
-				// 		})
-				// 	},
-
-				// })
-
-				// uni.chooseLocation({
-				// 	success: function(res) {
-				// 		console.log('success', res);
-				// 	}
-				// })
-
-
-			},
-			getAdd() {
-				var that = this
-				uni.addPhoneContact({
-					organization: that.resume.organization,
-					title: that.resume.title,
-					firstName: that.resume.firstName,
-					mobilePhoneNumber: that.resume.mobilePhoneNumber,
-					email: that.resume.email,
-					workAddressStreet: that.resume.workAddressStreet,
-					url: that.resume.url,
-					success(res) {
-						console.log('添加到通讯', res)
-
-					},
-					fail() {
-
-					},
-					complete() {
-
-					}
-				})
-			},
-
-			openMapRoute(lat, lon, cityName) {
-
-				var url = '';
-
-				if (plus.os.name == 'Android') {
-
-					var hasBaiduMap = plus.runtime.isApplicationExist({
-
-						pname: 'com.baidu.BaiduMap',
-
-						action: 'baidumap://'
-
-					});
-
-					var hasAmap = plus.runtime.isApplicationExist({
-
-						pname: 'com.autonavi.minimap',
-
-						action: 'androidamap://'
-
-					});
-
-					var urlBaiduMap = 'baidumap://map/marker?location=' + lat + ',' + lon + '&title=' + cityName +
-						'&src=婚梯';
-
-					var urlAmap = 'androidamap://viewMap?sourceApplication=婚梯&poiname=' + cityName + '&lat=' +
-						lat + '&lon=' + lon +
-
-						'&dev=0';
-
-					if (hasAmap && hasBaiduMap) {
-
-						plus.nativeUI.actionSheet({
-
-							title: '选择地图应用',
-
-							cancel: '取消',
-
-							buttons: [{
-
-								title: '百度地图'
-
-							}, {
-
-								title: '高德地图'
-
-							}]
-
-						}, function(e) {
-
-							switch (e.index) {
-
-								case 1:
-
-									plus.runtime.openURL(urlBaiduMap);
-
-									break;
-
-								case 2:
-
-									plus.runtime.openURL(urlAmap);
-
-									break;
-
-							}
-
-						});
-
-					} else if (hasAmap) {
-
-						plus.runtime.openURL(urlAmap);
-
-					} else if (hasBaiduMap) {
-
-						plus.runtime.openURL(urlBaiduMap);
-
-					} else {
-
-						url = 'geo:' + lat + ',' + lon + '?q=%e6%95%b0%e5%ad%97%e5%a4%a9%e5%a0%82';
-
-						plus.runtime.openURL(url); //如果是国外应用，应该优先使用这个，会启动google地图。这个接口不能统一坐标系，进入百度地图时会有偏差
-
-					}
-
-				} else {
-
-					// iOS上获取本机是否安装了百度高德地图，需要在manifest里配置，在manifest.json文件app-plus->distribute->apple->urlschemewhitelist节点下添加（如urlschemewhitelist:["iosamap","baidumap"]）
-
-					plus.nativeUI.actionSheet({
-
-						title: '选择地图应用',
-
-						cancel: '取消',
-
-						buttons: [{
-
-							title: 'Apple地图'
-
-						}, {
-
-							title: '百度地图'
-
-						}, {
-
-							title: '高德地图'
-
-						}]
-
-					}, function(e) {
-
-						console.log('e.index: ' + e.index);
-
-						switch (e.index) {
-
-							case 1:
-
-								url = 'http://maps.apple.com/?q=%e6%95%b0%e5%ad%97%e5%a4%a9%e5%a0%82&ll=' +
-									lat + ',' + lon +
-
-									'&spn=0.008766,0.019441';
-
-								break;
-
-							case 2:
-
-								url = 'baidumap://map/marker?location=' + lat + ',' + lon + '&title=' +
-									cityName + '&src=婚梯';
-
-								break;
-
-							case 3:
-
-								url = 'iosamap://viewMap?sourceApplication=婚梯&poiname=' + cityName +
-									'&lat=' + lat + '&lon=' + lon + '&dev=0';
-
-								break;
-
-							default:
-
-								break;
-
-						}
-
-						if (url != '') {
-
-							plus.runtime.openURL(url, function(e) {
-
-								plus.nativeUI.alert('本机未安装指定的地图应用');
-
-							});
-
-						}
-
-					});
-
-				}
-
-			},
-			makeCall: function(mobile) {
-				//安卓端：询问电话权限
-				switch (uni.getSystemInfoSync().platform) {
-					case 'android':
-						permision.requestAndroidPermission("android.permission.CALL_PHONE")
-						break;
-					case 'ios':
-						permision.judgeIosPermission("record")
-						permision.judgeIosPermission("camera")
-						break;
-				};
-				this.makePhoneCall(mobile)
-			},
-			//拨号
-			makePhoneCall: function(phoneParmas) {
-				console.log('电话', phoneParmas)
-				uni.makePhoneCall({
-					phoneNumber: phoneParmas,
-				});
-			},
-
-			cancelShowAsk(v) {
-				var that = this
-				that.showAsk = v
-			},
-			wechatLogin() {
-				var that = this
-				that.showAsk = false
-				uni.getUserProfile({ // 调起微信询问是否登录，拿到用户信息
-					desc: '用于完善会员信息',
-					lang: 'zh_CN',
-					success: res => {
-						if (res) {
-							console.log('成功', res)
-							res.userInfo.news_id = that.detailId
-							wx.login({ // 拿到code
-								success(res2) {
-									console.log('code', res2)
-									if (res2) {
-										this.onShareAppMessage()
-									}
-
-								}
-							})
-
-						}
-					},
-					fail: err => {
-						console.log('err', err)
-					}
-				})
-			},
 
 		}
 
@@ -475,15 +396,6 @@
 		color: #0089cd;
 		font-size: 14px;
 		margin-bottom: 4px;
-	}
-
-
-
-	.bg-look {
-		background-image: url('../../static/imgs/look.png');
-		background-size: 100% 100%;
-		background-position: center center;
-		background-repeat: no-repeat;
 	}
 
 	.t-button {
