@@ -2,7 +2,7 @@
 	<view>
 		<view>
 			<!-- url为要跳转外链的地址-->
-			<web-view :src="url">
+			<web-view :src="webviewUrl">
 			</web-view>
 		</view>
 	</view>
@@ -11,12 +11,12 @@
 	export default {
 		data() {
 			return {
-				url: ''
+				webviewUrl: ''
 			}
 		},
 		onLoad(val) {
-			// 传过来的地址一定要补全 https://， 网页会自动补全，但是小程序不会
-			this.url = 'https://' + val.url
+			// 如果 传过来的地址没有 https:// ，一定要补全， 网页会自动补全，但是小程序不会
+			this.webviewUrl = val.url
 			// 设置当前的title 如果外链中有的话将被覆盖
 			if (this.isNotEmpty(val.title)) {
 				this.setTitle(val.title);

@@ -2,9 +2,9 @@ import store from '../store/index.js'
 
 var ipAddress;
 if (process.env.NODE_ENV === 'development') {
-	ipAddress = "https://applet.hbosw.net/api/"
+	ipAddress = "https://card.hbosw.net/api/"
 } else {
-	ipAddress = "https://applet.hbosw.net/api/"
+	ipAddress = "https://card.hbosw.net/api/"
 }
 
 function post(url, data = {}, loading = false) {

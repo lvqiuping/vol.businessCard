@@ -1,57 +1,52 @@
 <template>
 	<view>
 		<view style="position: relative;" class="bg-box">
-			<image :src="imgBg" style="width: 100%;" mode="widthFix" :show-menu-by-longpress="true"
-				@click="getPreviewImage(imgBg)"></image>
-			<view style="position: absolute;bottom: -8px; background-color: #fff; width: 210px; border-radius: 50px;
-				margin-left: 15px;padding: 4px 0 4px 10px;">
-				{{ resume.organization }}
+			<image :src="cardData.header_img" style="width: 100%;" mode="widthFix"
+				:show-menu-by-longpress="showmenubyLongpress" @click="getPreviewImage(cardData.header_img)"></image>
+			<view style="position: absolute;bottom: -4px; background-color: #fff; border-radius: 50px; padding: 4px 12px;margin-left: 18px;
+				font-size: 18px;
+				">
+				{{ cardData.company }}
 			</view>
 		</view>
 		<view class="content">
 			<view style="margin: 10px 0;display: flex;justify-content: space-between;">
 				<view>
-					<view v-for="(item, index) in resumeList" :key="index">
-						<view class="t-text"> {{ item }}{{ resume[index] }}</view>
-					</view>
-					<view class="t-text" @click="getWebview(resume.url)">官网：{{ resume.url }}</view>
+					<view class="t-text">手机：{{ cardData.phone }}</view>
+					<view class="t-text">邮箱：{{ cardData.email }}</view>
+					<view class="t-text">地址：{{ cardData.address }}</view>
+					<view class="t-text" @click="getWebview(cardData.website)">官网：{{ cardData.website }}</view>
 				</view>
-
 				<view>
-					<button class="custom-style" open-type="share"></button>
-					<!-- <button class="custom-style" v-else @click="showAsk = true">
-					</button> -->
+					<button class="custom-style" open-type="share" v-if="userInfo"></button>
+					<button class="custom-style" @click="showAsk = true" v-else></button>
 				</view>
-
-
-
 			</view>
 			<view class="t-button">
 				<view v-for="(item, index) in btnList" :key="index">
 					<view style="display: flex; align-items: center; justify-content: space-between; 
-						border: 2px solid #0089cd;border-radius: 50px; padding: 6px;" @click="getBtn(item)">
+						border: 2px solid #0089cd;border-radius: 50px; padding: 4px 8px;" @click="getBtn(item)">
 						<image :src="item.url" style="width: 12px;height: 12px;"></image>
 						<view style="font-size: 14px; padding-left: 4px;">{{ item.text }}</view>
 					</view>
 				</view>
 			</view>
-			<view style="margin-top: 10px;display: flex;justify-content: space-between;font-size: 12px; color: #bbb;">
+			<view style="margin-top: 14px;display: flex;justify-content: space-between;font-size: 12px; color: #bbb;">
 				<view style="display: flex;align-items: center;">
-					<view v-for="(item, index) in supportList" :key="index" style="display: flex; align-items: center;">
-						<image :src="item.avatarUrl" style="width: 12px;height: 12px;margin-right: 4px;"></image>
+					<view style="margin-right: 4px;">
+						<u-avatar-group :urls="userCardHistory" size="16" gap="0.1"></u-avatar-group>
 					</view>
-					<view>最近{{ look }}人浏览</view>
+					<view>最近{{ cardData.user_card_history_count }}人浏览</view>
 				</view>
 				<view style="display: flex;" @click="getSupport">
-					点赞 {{ zan }}
-					<u-icon :name="isSupport?'thumb-up-fill':'thumb-up'" :color="isSupport?'#0089cd':'#bbb'"></u-icon>
+					点赞 {{ cardData.user_card_support_count }}
+					<u-icon :name="hasSupport?'thumb-up-fill':'thumb-up'" :color="hasSupport?'#0089cd':'#bbb'"></u-icon>
 				</view>
 			</view>
-
-
 		</view>
 		<vol-popup :showAsk="showAsk" :popupContent="popupContent" @cancel="cancelShowAsk" @confirm="wechatLogin">
 		</vol-popup>
+		<!-- 个性化海报分享 -->
 		<!-- <view>
 			<wxml-to-canvas class="widget" id="widget" width="300" height="300" style=""></wxml-to-canvas>
 		</view> -->
@@ -64,13 +59,8 @@
 		name: 'Home',
 		data() {
 			return {
-				userInfo: {},
-				isLogin: false,
-				shareOpenType: '',
-				zan: 0,
-				look: 0,
-				isSupport: false,
-				isWeb: false,
+				showmenubyLongpress: false,
+				userInfo: null, // 一份存本地内存，一份存组件调用
 				showAsk: false,
 				popupContent: {
 					title: '您还未登录',
@@ -78,8 +68,6 @@
 					cancel: '稍后登录',
 					confirm: '登录'
 				},
-				code: require('@/static/imgs/code.png'),
-				imgBg: require('@/static/imgs/bg.png'),
 				share: require('@/static/imgs/bb2.png'),
 				btnList: [{
 						type: 'call',
@@ -97,28 +85,13 @@
 						url: require('@/static/imgs/bb3.png')
 					}
 				],
-				resume: {
-					organization: '宁波德曼压缩机有限公司',
-					firstName: '何立庆',
-					title: '直销中心总监',
-					mobilePhoneNumber: '13805810569',
-					email: 'hlq@deman1998.com',
-					workAddressStreet: '浙江慈溪市匡堰越慈路188号',
-					url: 'www.deman1998.com'
-				},
-				resumeList: {
-					mobilePhoneNumber: '手机：',
-					email: '邮箱：',
-					workAddressStreet: '地址：'
-					// url: '官网：'
-				},
-				supportList: [],
-				supportFlag: false
-
+				timer: null,
+				hasSupport: false,
+				cardData: {},
+				userCardHistory: [],
+				startViewTime: 0,
+				endViewTime: 0
 			}
-		},
-		created() {
-
 		},
 		// 分享给朋友
 		async onShareAppMessage(options) {
@@ -127,7 +100,7 @@
 			return {
 				provider: "weixin",
 				scene: "WXSceneSession",
-				title: '您好，我是' + that.resume.organization + '，这是我的名片请惠存。',
+				title: '您好，我是' + that.cardData.username + '，这是我的名片请惠存。',
 				imageUrl: that.imgBg,
 				path: '/pages/home/home', // 默认是当前页面，必须是以‘/'开头的完整路径
 				success(res) {
@@ -138,21 +111,71 @@
 				}
 			}
 		},
-
 		// 分享到朋友圈，加上这个上面微信自带的按钮才会能选择
 		onShareTimeline: function() {
 			var that = this
 			var query = {
-				id: that.newsInfo.id,
+				id: that.cardData.id,
 				openid: that.userInfo.openid
 			}
 			return {
-				title: '您好，我是' + that.resume.organization + '，这是我的名片请惠存。',
+				title: '您好，我是' + that.cardData.username + '，这是我的名片请惠存。',
 				query: query
 			}
 		},
-
+		onLoad() {
+			var that = this
+			that.getCard()
+			that.userInfo = uni.getStorageSync('userInfo')
+			if (!that.userInfo) {
+				that.timer = setTimeout(function() {
+					that.showAsk = true
+				}, 3000)
+			}
+		},
+		// 	onShow() {
+		// 		this.startViewTime = Date.now()
+		// 	},
+		// 	onHide() {
+		// 		// 刷新浏览记录
+		// 		console.log('this.userInfo', this.userInfo)
+		// 		if (uni.getStorageSync('userInfo')) {
+		// 			this.endViewTime = Date.now()
+		// 			that.getLook()
+		// }
+		// },
 		methods: {
+			// 卡片信息
+			getCard() {
+				var that = this
+				that.http.get("/card/read").then((result) => {
+					console.log(result.data)
+					that.cardData = result.data
+					var a = that.cardData.userCardHistory
+					var b = []
+					a.forEach((item) => {
+						b.push(item.user)
+					})
+					b.forEach((item) => {
+						that.userCardHistory.push(item.header_img)
+					})
+
+					if (that.userInfo) {
+						that.getHasSupport()
+					}
+				})
+			},
+			// 是否已点赞
+			getHasSupport() {
+				var that = this
+				let params = {
+					id: that.cardData.id,
+					openid: that.userInfo.openid
+				}
+				that.http.get("/card/hasSupport", params).then((result) => {
+					that.hasSupport = result.data
+				})
+			},
 			// 授权登录
 			wechatLogin() {
 				var that = this
@@ -162,28 +185,32 @@
 					lang: 'zh_CN',
 					success: res => {
 						if (res) {
-							console.log('成功', res)
-							that.userInfo.news_id = res.userInfo.news_id
-							that.userInfo.avatarUrl = res.userInfo.avatarUrl
-							// userInfoList.push({})
-							// console.log('that.userInfo', that.userInfo)
-							// uni.setStorageSync('userInfos', that.userInfo)
-							// console.log(uni.getStorageInfoSync('userInfos'))
-							that.supportList.push(that.userInfo)
+							res.userInfo.card_id = that.cardData.id
 							wx.login({ // 拿到code
 								success(res2) {
-									console.log('code', res2)
-									if (res2) {
-										that.isLogin = true
-										that.look = that.look + 1
-										uni.showToast({
-											text: '登录成功！'
-										})
+									let params = {
+										userInfo: res.userInfo,
+										code: res2.code
 									}
+									that.http.post("/user/login", params, true)
+										.then((result) => {
+											if (result.code != 1) {
+												return that.$toast(result.msg)
+											}
+											uni.showToast({
+												title: '登录成功'
+											})
+											that.showAsk = false
+											uni.setStorageSync('userInfo', result.data)
+											that.userInfo = result.data
+											that.getLook()
+											that.getHasSupport()
 
+										}).catch((err) => {
+											console.log('err', err)
+										});
 								}
 							})
-
 						}
 					},
 					fail: err => {
@@ -196,19 +223,26 @@
 				var that = this
 				that.showAsk = v
 			},
-			// 分享
-			getShare() {
-				if (this.isLogin) {
-					this.shareOpenType = 'share'
-				} else {
-					this.showAsk = true
+			// 浏览记录
+			getLook() {
+				console.log('记录')
+				var that = this
+				let params = {
+					id: that.cardData.id,
+					openid: that.userInfo.openid,
+					view_time: that.endViewTime - that.startViewTime
 				}
+				that.http.get("/card/setViewHistory", params)
 			},
 			// 拨号+通讯录+跳转
 			getBtn(v) {
 				var that = this
+				if (!that.userInfo) {
+					that.showAsk = true
+					return
+				}
 				if (v.type === 'call') {
-					that.makeCall(that.resume.mobilePhoneNumber)
+					that.makeCall(that.cardData.phone)
 				} else if (v.type === 'add') {
 					that.getAdd()
 				} else if (v.type === 'adress') {
@@ -238,13 +272,13 @@
 			getAdd() {
 				var that = this
 				uni.addPhoneContact({
-					organization: that.resume.organization,
-					title: that.resume.title,
-					firstName: that.resume.firstName,
-					mobilePhoneNumber: that.resume.mobilePhoneNumber,
-					email: that.resume.email,
-					workAddressStreet: that.resume.workAddressStreet,
-					url: that.resume.url,
+					organization: that.cardData.company,
+					title: that.cardData.position,
+					firstName: that.cardData.username,
+					mobilePhoneNumber: that.cardData.phone,
+					email: that.cardData.email,
+					workAddressStreet: that.cardData.address,
+					url: that.cardData.website,
 					success(res) {
 						console.log('添加到通讯', res)
 
@@ -259,10 +293,11 @@
 			},
 			// 导航
 			getMap() {
+				console.log(this.cardData)
 				uni.openLocation({
-					latitude: 30.163972,
-					longitude: 121.326373,
-					address: '浙江慈溪市匡堰越慈路188号',
+					latitude: Number(this.cardData.latitude),
+					longitude: Number(this.cardData.longitude),
+					address: this.cardData.address,
 					success: function() {
 						console.log('success');
 					},
@@ -272,80 +307,60 @@
 						})
 					}
 				})
-				// uni.getLocation({
-				// 	type: 'gcj02', //返回可以用于uni.openLocation的经纬度
-				// 	success: function(res) {
-				// 		console.log('99999', res)
-				// 		const latitude = res.latitude;
-				// 		const longitude = res.longitude;
-				// 		uni.openLocation({
-				// 			latitude: latitude,
-				// 			longitude: longitude,
-				// 			success: function() {
-				// 				console.log('success');
-				// 			},
-				// 			fail: function() {
-				// 				uni.showToast({
-				// 					title: 'error'
-				// 				})
-				// 			}
-				// 		})
-				// 	},
-
-				// })
 			},
 			// 外部链接跳转
 			getWebview(v) {
+				var that = this
+				if (!that.userInfo) {
+					that.showAsk = true
+					return
+				}
 				uni.navigateTo({
 					url: '/components/vol-webview/vol-webview?url=' + v
 				})
 			},
 			// 点赞
 			getSupport() {
-				if (!this.isLogin) {
-					this.showAsk = true
-				} else {
-					this.supportFlag = !this.supportFlag
-					this.isSupport = !this.isSupport
-					if (this.supportFlag) {
-						this.zan = this.zan + 1
-					} else if (!this.supportFlag) {
-						this.zan = this.zan - 1
+				var that = this
+				if (!that.userInfo) {
+					that.showAsk = true
+					return
+				}
+				if (!that.hasSupport) {
+					let params = {
+						id: that.cardData.id,
+						openid: that.userInfo.openid,
+						support: 1
 					}
+					that.http.post("/card/setInc", params).then(result => {
+						that.hasSupport = true
+						that.cardData.user_card_support_count++
+					})
+				} else {
+					console.log('已点过赞')
 				}
-				// let params = {
-				// 	id: id
-				// }
-				// that.http.get("/NewsComments/setInc", params).then(result => {
-				// 	// 获取点赞列表
-				// 	that.getList()
-				// })
-			},
-			// 点赞列表
-			getList() {
-				var that = this;
-				let params = {
-					news_id: that.newsInfo.id
-				}
-				that.http.get("/NewsComments/index", params).then(result => {
-					result.data.color = "#333"
-					that.commentList = result.data;
-					that.loading = false;
-				})
+
 			},
 			//长按识别二维码
 			getPreviewImage(e) {
-				console.log('e', e)
-				uni.previewImage({
-					urls: ['@/static/imgs/imgBg.png'], // 数组
-					current: '@/static/imgs/imgBg.png', // 数组中的第一张
-					success: res => {
-						console.log('res', res)
-					},
-					fail: err => {
-						console.log('err', err)
-					}
-				})
+				var that = this
+				if (!that.userInfo) {
+					that.showAsk = true
+					return
+				} else {
+					that.showmenubyLongpress = true
+					uni.previewImage({
+						urls: ['@/static/imgs/imgBg.png'], // 数组
+						current: '@/static/imgs/imgBg.png', // 数组中的第一张
+						success: res => {
+							console.log('res', res)
+						},
+						fail: err => {
+							console.log('err', err)
+						}
+					})
+				}
+
 			}
 			// getImage() {
 			// 	const cw = 140
@@ -400,7 +415,7 @@
 
 	.t-button {
 		display: flex;
-		justify-content: space-around;
+		justify-content: space-between;
 	}
 
 	.content {
@@ -415,5 +430,6 @@
 		background-size: 100% 100%;
 		background-position: center center;
 		background-repeat: no-repeat;
+		box-shadow: 0 4px 7px 0 rgba(0, 0, 0, 0.2)
 	}
 </style>
