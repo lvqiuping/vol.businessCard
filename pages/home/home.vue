@@ -3,14 +3,14 @@
 		<view style="position: relative;" class="bg-box">
 			<image :src="cardData.header_img" style="width: 100%;" mode="widthFix"
 				:show-menu-by-longpress="showmenubyLongpress" @click="getPreviewImage(cardData.header_img)"></image>
-			<view style="position: absolute;bottom: -4px; background-color: #fff; border-radius: 50px; padding: 4px 12px;margin-left: 18px;
-				font-size: 18px;
+			<view style="position: absolute;bottom: -8rpx; background-color: #fff; border-radius: 100rpx; padding: 8rpx 24rpx;margin-left: 38rpx;
+				font-size: 36rpx;
 				">
 				{{ cardData.company }}
 			</view>
 		</view>
 		<view class="content">
-			<view style="margin: 10px 0;display: flex;justify-content: space-between;">
+			<view style="margin: 20rpx 0;display: flex;justify-content: space-between;">
 				<view>
 					<view class="t-text">手机：{{ cardData.phone }}</view>
 					<view class="t-text">邮箱：{{ cardData.email }}</view>
@@ -25,27 +25,32 @@
 			<view class="t-button">
 				<view v-for="(item, index) in btnList" :key="index">
 					<view style="display: flex; align-items: center; justify-content: space-between; 
-						border: 2px solid #0089cd;border-radius: 50px; padding: 4px 8px;" @click="getBtn(item)">
-						<image :src="item.url" style="width: 12px;height: 12px;"></image>
-						<view style="font-size: 14px; padding-left: 4px;">{{ item.text }}</view>
+						border: 5rpx solid #0089cd;border-radius: 100rpx; padding: 14rpx 20rpx;" @click="getBtn(item)">
+						<image :src="item.url" style="width: 24rpx;height: 24rpx;"></image>
+						<view style="font-size: 28rpx; padding-left: 8rpx;">{{ item.text }}</view>
 					</view>
 				</view>
 			</view>
-			<view style="margin-top: 14px;display: flex;justify-content: space-between;font-size: 12px; color: #bbb;">
-				<view style="display: flex;align-items: center;">
-					<view style="margin-right: 4px;">
-						<u-avatar-group :urls="userCardHistory" size="16" gap="0.1"></u-avatar-group>
+			<view style="margin-top: 28rpx;display: flex;justify-content: space-between;font-size: 26rpx; color: #bbb;">
+				<view style="display: flex;align-items: center;justify-content: center;">
+					<view style="margin-right: 8rpx;">
+						<u-avatar-group :urls="userCardHistory" size="18" gap="0.1">
+						</u-avatar-group>
 					</view>
 					<view>最近{{ cardData.user_card_history_count }}人浏览</view>
 				</view>
 				<view style="display: flex;" @click="getSupport">
 					点赞 {{ cardData.user_card_support_count }}
-					<u-icon :name="hasSupport?'thumb-up-fill':'thumb-up'" :color="hasSupport?'#0089cd':'#bbb'"></u-icon>
+					<u-icon :name="hasSupport?'thumb-up-fill':'thumb-up'" :color="hasSupport?'#0089cd':'#bbb'"
+						size="30rpx"></u-icon>
 				</view>
 			</view>
 		</view>
+		<!-- 弹框 -->
 		<vol-popup :showAsk="showAsk" :popupContent="popupContent" @cancel="cancelShowAsk" @confirm="wechatLogin">
 		</vol-popup>
+		<vol-actionsheet :showAction="showAction" :actionInfos="actionInfos" :actionList="actionList"
+			@selectActionsSheet2="selectActionsSheet2" @closeActionsSheet2="closeActionsSheet2"></vol-actionsheet>
 		<!-- 个性化海报分享 -->
 		<!-- <view>
 			<wxml-to-canvas class="widget" id="widget" width="300" height="300" style=""></wxml-to-canvas>
@@ -59,6 +64,13 @@
 		name: 'Home',
 		data() {
 			return {
+
+				showAction: false,
+				actionInfos: {
+					title: '',
+					closeOnClickOverlay: true
+				},
+				actionList: [],
 				showmenubyLongpress: false,
 				userInfo: null, // 一份存本地内存，一份存组件调用
 				showAsk: false,
@@ -149,7 +161,6 @@
 			getCard() {
 				var that = this
 				that.http.get("/card/read").then((result) => {
-					console.log(result.data)
 					that.cardData = result.data
 					var a = that.cardData.userCardHistory
 					var b = []
@@ -159,7 +170,6 @@
 					b.forEach((item) => {
 						that.userCardHistory.push(item.header_img)
 					})
-
 					if (that.userInfo) {
 						that.getHasSupport()
 					}
@@ -225,7 +235,6 @@
 			},
 			// 浏览记录
 			getLook() {
-				console.log('记录')
 				var that = this
 				let params = {
 					id: that.cardData.id,
@@ -242,12 +251,38 @@
 					return
 				}
 				if (v.type === 'call') {
-					that.makeCall(that.cardData.phone)
+					that.showAction = true
+					that.actionList = [{
+						name: '手机：' + that.cardData.phone,
+						index: 0
+					}, {
+						name: '立即拨打',
+						index: 1
+					}]
 				} else if (v.type === 'add') {
-					that.getAdd()
+					that.showAction = true
+					that.actionList = [{
+						name: '手机：' + that.cardData.phone,
+						index: 2
+					}, {
+						name: '添加到通讯录',
+						index: 3
+					}]
+
 				} else if (v.type === 'adress') {
 					that.getMap()
 				}
+			},
+			selectActionsSheet2(v) {
+				if (v.index === 1) {
+					this.makeCall(this.cardData.phone)
+				} else if (v.index === 3) {
+					this.getAdd()
+				}
+
+			},
+			closeActionsSheet2(v) {
+				this.showAction = v
 			},
 			//拨号
 			makeCall: function(mobile) {
@@ -271,29 +306,52 @@
 			// 通讯录
 			getAdd() {
 				var that = this
-				uni.addPhoneContact({
-					organization: that.cardData.company,
-					title: that.cardData.position,
-					firstName: that.cardData.username,
-					mobilePhoneNumber: that.cardData.phone,
-					email: that.cardData.email,
-					workAddressStreet: that.cardData.address,
-					url: that.cardData.website,
+				uni.authorize({
+					scope: 'scope.addPhoneContact',
 					success(res) {
-						console.log('添加到通讯', res)
-
+						uni.addPhoneContact({
+							organization: that.cardData.company,
+							title: that.cardData.position,
+							firstName: that.cardData.username,
+							mobilePhoneNumber: that.cardData.phone,
+							email: that.cardData.email,
+							workAddressStreet: that.cardData.address,
+							url: that.cardData.website,
+							success(res) {
+								console.log('res', res)
+							},
+							fail(detail) {
+								console.log('detail', detail)
+							},
+							complete() {
+								console.log('complete')
+							}
+						})
 					},
-					fail() {
-
-					},
-					complete() {
-
+					fail(detail) {
+						uni.showModal({
+							content: '检测到您没打开添加通讯录功能权限，是否去设置打开？',
+							confirmText: "确认",
+							cancelText: '取消',
+							success: (res) => {
+								if (res.confirm) {
+									uni.openSetting({
+										success: (res) => {
+											console.log('确认', res)
+										}
+									})
+								} else {
+									console.log('取消');
+									return false;
+								}
+							}
+						})
+						return false;
 					}
 				})
 			},
 			// 导航
 			getMap() {
-				console.log(this.cardData)
 				uni.openLocation({
 					latitude: Number(this.cardData.latitude),
 					longitude: Number(this.cardData.longitude),
@@ -409,8 +467,8 @@
 <style lang="scss" scoped>
 	.t-text {
 		color: #0089cd;
-		font-size: 14px;
-		margin-bottom: 4px;
+		font-size: 30rpx;
+		margin-bottom: 8rpx;
 	}
 
 	.t-button {
@@ -420,16 +478,17 @@
 
 	.content {
 		width: 90%;
-		margin: 0 5%;
+		margin: 3% 6%;
 	}
 
 	.custom-style {
-		width: 50px;
-		height: 50px;
+		width: 100rpx;
+		height: 100rpx;
+		border-radius: 12rpx;
 		background-image: url('../../static/imgs/share.png');
 		background-size: 100% 100%;
 		background-position: center center;
 		background-repeat: no-repeat;
-		box-shadow: 0 4px 7px 0 rgba(0, 0, 0, 0.2)
+		box-shadow: 0 8rpx 14rpx 0 rgba(0, 0, 0, 0.2)
 	}
 </style>
